@@ -48,7 +48,7 @@ def train_random_forest(n_estimators, max_depth, min_samples_leaf, random_state=
     feature_importances = rf.feature_importances_
     
     # Salvar o modelo e o scaler
-    model_path = 'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/random_forest_model_5.pkl'
+    model_path = 'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/random_forest_model.pkl'
     scaler_path = 'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/scaler.pkl'
     joblib.dump(rf, model_path)
     joblib.dump(scaler, scaler_path)
@@ -57,8 +57,8 @@ def train_random_forest(n_estimators, max_depth, min_samples_leaf, random_state=
 
 # Função para carregar o modelo salvo e fazer previsões
 def load_model_and_predict(input_data):
-    model_path = r'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/random_forest_model_5.pkl'
-    scaler_path = r'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/scaler.pkl'
+    model_path = 'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/random_forest_model.pkl'
+    scaler_path = 'C:/Users/italo/OneDrive/Área de Trabalho/Reconhecimento de padrões/Pred/scaler.pkl'
 
     rf_model_loaded = joblib.load(model_path)
     scaler_loaded = joblib.load(scaler_path)
@@ -68,7 +68,7 @@ def load_model_and_predict(input_data):
     return prediction
 
 # Interface de ajuste de hiperparâmetros com Streamlit
-st.title('Ajuste de Hiperparâmetros do Random Forest e Índice de saúde do transformador')
+st.title('Ajuste de Hiperparâmetros do Random Forest para Previsão de Expectativa de Vida')
 
 # Ajuste dos Hiperparâmetros
 st.sidebar.header('Ajuste os Hiperparâmetros do Modelo')
@@ -78,54 +78,37 @@ min_samples_leaf = st.sidebar.slider('Mínimo de Amostras por Folha (min_samples
 
 # Treinar o modelo com os hiperparâmetros ajustados
 if st.sidebar.button('Treinar Modelo'):
-    rf_model, scaler, mae, mse, r2, y_test, y_pred, feature_importances, feature_names = train_random_forest(n_estimators, max_depth, min_samples_leaf)
+    rf, scaler, mae, mse, r2, y_test, y_pred, feature_importances, feature_names = train_random_forest(
+        n_estimators, max_depth, min_samples_leaf)
     
-    # Exibir as métricas
-    st.subheader('Métricas de Desempenho do Modelo Treinado')
-    st.write(f"Mean Absolute Error (MAE): {mae:.2f}")
-    st.write(f"Mean Squared Error (MSE): {mse:.2f}")
-    st.write(f"R² Score: {r2:.2f}")
+    # Exibir métricas de desempenho
+    st.write("**Mean Absolute Error (MAE):**", mae)
+    st.write("**Mean Squared Error (MSE):**", mse)
+    st.write("**R-squared (R2):**", r2)
     
-    # Exibir previsões e valores reais
-    st.subheader('Previsões vs Valores Verdadeiros')
-    resultado_df = pd.DataFrame({'Real': y_test, 'Previsto': y_pred})
-    st.write(resultado_df.head(20))
-    
-    # Gráfico de Importância das Features
-    st.subheader('Importância dos gases medidos para a predição')
-    feature_importance_df = pd.DataFrame({
-        'Características': feature_names,
-        'Importância': feature_importances
-    }).sort_values(by='Importância', ascending=False)
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.barh(feature_importance_df['Características'], feature_importance_df['Importância'])
-    ax.set_xlabel('Importância')
-    ax.set_title('Importância das Características no Random Forest')
-    plt.gca().invert_yaxis()  
-    st.pyplot(fig)
+    # Exibir importância das features
+    st.write("### Importância das Features")
+    feature_importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
+    st.bar_chart(feature_importance_df.set_index('Feature'))
 
+    # Exibir comparação de valores reais e previstos
+    st.write("### Comparação de Valores Reais e Previstos")
+    comparison_df = pd.DataFrame({'Real': y_test, 'Predicted': y_pred})
+    st.line_chart(comparison_df)
 
-st.sidebar.header('Entrar Dados para Previsão')
+# Seção para fazer previsões usando o modelo carregado
+st.sidebar.header('Fazer Previsões')
+df = load_data()
+feature_names = df.drop('Life expectation', axis=1).columns
 
-hydrogen = st.sidebar.number_input('Hydrogen', min_value=0.0, value=0.0)
-oxygen = st.sidebar.number_input('Oxygen', min_value=0.0, value=0.0)
-nitrogen = st.sidebar.number_input('Nitrogen', min_value=0.0, value=0.0)
-methane = st.sidebar.number_input('Methane', min_value=0.0, value=0.0)
-co = st.sidebar.number_input('CO', min_value=0.0, value=0.0)
-co2 = st.sidebar.number_input('CO2', min_value=0.0, value=0.0)
-ethylene = st.sidebar.number_input('Ethylene', min_value=0.0, value=0.0)
-ethane = st.sidebar.number_input('Ethane', min_value=0.0, value=0.0)
-acetylene = st.sidebar.number_input('Acetylene', min_value=0.0, value=0.0)
-dbds = st.sidebar.number_input('DBDS', min_value=0.0, value=0.0)
-power_factor = st.sidebar.number_input('Power Factor', min_value=0.0, value=0.0)
-interfacial_v = st.sidebar.number_input('Interfacial V', min_value=0.0, value=0.0)
-dielectric_rigidity = st.sidebar.number_input('Dielectric Rigidity', min_value=0.0, value=0.0)
-water_content = st.sidebar.number_input('Water Content', min_value=0.0, value=0.0)
+# Criar caixas de entrada para cada feature
+input_data = []
+for feature in feature_names:
+    value = st.sidebar.number_input(f'Valor para {feature}', value=0.0)
+    input_data.append(value)
 
-
-if st.sidebar.button('Fazer Previsão'):
-    input_data = np.array([[hydrogen, oxygen, nitrogen, methane, co, co2, ethylene, ethane, acetylene, dbds, power_factor, interfacial_v, dielectric_rigidity, water_content]])
-    prediction = load_model_and_predict(input_data)
-    st.subheader('Resultado da Previsão')
-    st.write(f'Íncide do transformador é: {prediction[0]:.2f}%')
+# Fazer previsão com os dados inseridos
+if st.sidebar.button('Prever com Dados de Entrada'):
+    input_array = np.array(input_data).reshape(1, -1)
+    prediction = load_model_and_predict(input_array)
+    st.write("**Previsão de Expectativa de Vida:**", prediction[0])
