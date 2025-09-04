@@ -10,7 +10,7 @@ This work was developed for the Pattern Recognition course in the Master of Comp
 - Random Forest Regressor
 
 ## Results : 
-Com um hyperterminal envia-se o comando LER_ADC para leitura dos valores ou outro camando será inválido.
+Exemplo de resultados após entrada de dadod na plataforma de ajuste de valores de medições dos gases e parametros elétricos:
 ![Terminal de comunicação](padrões.png)
 ![Terminal de comunicação](feature_importance.png)
 
